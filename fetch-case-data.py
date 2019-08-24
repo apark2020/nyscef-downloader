@@ -10,7 +10,7 @@ headers = {
 
 case_data_map = []
 
-with open('cases.json') as json_file:
+with open('cases-09-03.json') as json_file:
     data = json.load(json_file)
 
     for date, courts in data.items():
@@ -63,7 +63,8 @@ with open('cases.json') as json_file:
                     'filing_status': filing_status,
                     'judge': judge,
                     'plaintiffs': plaintiffs,
-                    'respondents': defendants
+                    'respondents': defendants,
+                    'date': date
                 }
                 pprint.pprint(case_data)
                 case_data_map.append(case_data)

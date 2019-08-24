@@ -1,9 +1,12 @@
-import datetime
+from datetime import timedelta, date
 import json
 import re
 import requests
+from subprocess import check_output
 
 from bs4 import BeautifulSoup
+import pytesseract
+from PIL import Image
 
 NEW_YORK_COUNTY_COURTS = {
     "Albany": "25",
@@ -57,7 +60,7 @@ NEW_YORK_COUNTY_COURTS = {
 }
 
 headers = {
-    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/76.0.3809.100 Safari/537.36',
+    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/76.0.3809.100 Safari/537.36', # noqa
 }
 
 
@@ -69,18 +72,58 @@ data = {
   'btnSubmit': 'Search'
 }
 
+case_data = {}
+
+
+def resolve(path):
+    check_output(['convert', path, '-resample', '600', path])
+    return pytesseract.image_to_string(Image.open(path))
+
+
+def get_new_session_id():
+    page_response = requests.get(
+        'https://iapps.courts.state.ny.us/nyscef/CaseSearch',
+        headers=headers
+    )
+    soup = BeautifulSoup(page_response.text, 'html.parser')
+    img = soup.find('img')['src']
+    img_request = requests.get(
+        "{}/{}".format("https://iapps.courts.state.ny.us/nyscef", img),
+        headers=headers
+    )
+    print(img_request)
+    open('captcha.jpg', 'wb').write(img_request.content)
+    captcha_text = resolve('captcha.jpg')
+
+    captcha_data = {'jcaptcha_answer': captcha_text}
+    response = requests.post(
+        'https://iapps.courts.state.ny.us/nyscef/CaseSearch',
+        headers=headers,
+        data=captcha_data
+    )
+
+    return response
+
+
 request_count = 0
 print('start with a session id:')
-session_id = input()
+session_id = get_new_session_id()
 cookies = {
     'JSESSIONID': session_id
 }
 
-case_data = {}
 
-for d in range(14, int(datetime.datetime.now().day) + 1):
-    print("Starting with filing date '08/{}/2019'".format(str(d)))
-    filing_date = '08/{}/2019'.format(str(d))
+def daterange(start_date, end_date):
+    for n in range(int((end_date - start_date).days)):
+        yield start_date + timedelta(n)
+
+
+start_date = date(2019, 8, 14)
+end_date = date()
+
+for filing_date in daterange(start_date, end_date):
+    filing_date = filing_date.strftime("%m-%d-%Y")
+    print("Starting with filing date {}".format(filing_date))
     case_data[filing_date] = {}
     data['txtFilingDate'] = filing_date
     for court, court_id in NEW_YORK_COUNTY_COURTS.items():
@@ -94,11 +137,17 @@ for d in range(14, int(datetime.datetime.now().day) + 1):
         request_count += 1
         if request_count > 60:
             print("need session id for a search on {}".format(court))
-            cookies['JSESSIONID'] = input()
+            cookies['JSESSIONID'] = get_new_session_id()
             request_count = 0
         soup = BeautifulSoup(initial_response.text, 'html.parser')
+        if soup.find(class_="MsgBox_Error"):
+            print("AN ERROR OCCURRED")
+            print(soup.find("span", class_="MsgBox_Message").text.strip())
         try:
-            last_page = [a.get('href') for a in soup.find('span', class_='pageNumbers').findAll('a')][-1]
+            last_page = [
+                a.get('href') for a in soup.find('span', class_='pageNumbers')
+                .findAll('a')
+            ][-1]
             pages_num = int(last_page.split('?PageNum=')[-1])
             print('pages: {}'.format(pages_num))
         except AttributeError:
@@ -123,7 +172,7 @@ for d in range(14, int(datetime.datetime.now().day) + 1):
                     case_type = table_data[3]
                     if 'Torts - Child Victims Act' in case_type.text:
                         url = link.findAll('a')[0].get('href')
-                        docket_id = re.search(r'(?:docketId)=(.*)(?:==)', url).group(0).replace('docketId=', '').replace('==', '')
+                        docket_id = re.search(r'(?:docketId)=(.*)(?:==)', url).group(0).replace('docketId=', '').replace('==', '') # noqa
                         case_data[filing_date][court].append({
                             'docket_id': docket_id,
                             'case_status': case_status.text,
