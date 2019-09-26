@@ -5,7 +5,9 @@ import sys
 
 from bs4 import BeautifulSoup
 
+BASE_URL = "https://iapps.courts.state.ny.us/nyscef/"
 BASE_DOCKET_SEARCH_URL = "https://iapps.courts.state.ny.us/nyscef/CaseDetails?docketId="
+BASE_DOCKET_DOCUMENTS_URL = "https://iapps.courts.state.ny.us/nyscef/DocumentList?docketId="
 
 
 def get_case_summary_data(soup):
@@ -58,6 +60,59 @@ def get_arbiter_data(soup, arbiter_type):
     return {arbiter_type.lower(): arbiters}
 
 
+def get_filings_data(docket_id, request_headers, request_params):
+    request_url = BASE_DOCKET_DOCUMENTS_URL + docket_id + "=="
+    documents = []
+    response = requests.get(
+        request_url,
+        headers=request_headers,
+        params=request_params
+    )
+    soup = BeautifulSoup(response.text, 'html.parser')
+    document_data = soup.find(
+        'table'
+    ).find_all('tr')[1:]
+
+    if not document_data:
+        return {"documents": documents}
+
+    for document in document_data:
+        document_template = {
+            'link': None,
+            'filed_by': None,
+            'filed_date': None,
+            'received_date': None,
+            'confirmation_link': None,
+            'confirmation_state': None           
+        }
+        tds = document.find_all('td')
+        if not tds or len(tds) < 4:
+            continue
+
+        document_template['title'] = tds[1].text.strip()
+
+        try:
+            document_template['link'] = BASE_URL + tds[1].find('a').get('href')
+        except AttributeError:
+            pass
+
+        document_metadata = list(filter(None, [" ".join(t.split()) for t in tds[2].text.strip().split("\r\n")]))
+        if document_metadata:
+            document_template['filer'] = document_metadata[0]
+            document_template['filed_date'] = document_metadata[1].split()[1]
+            document_template['received_date'] = document_metadata[2].split()[1]
+
+        try:
+            document_template['confirmation_link'] = BASE_URL + tds[3].find('a').get('href')
+        except AttributeError:
+            pass
+
+        document_template['confirmation_state'] = tds[3].text.strip().split('\n\n')[0]
+        documents.append(document_template)
+    
+    return {"documents": documents}
+
+
 def main(docket_ids, output_file):
     case_data = []
     for docket_id in docket_ids:
@@ -73,8 +128,10 @@ def main(docket_ids, output_file):
         summary_data = get_case_summary_data(soup)
         petitioner_data = get_arbiter_data(soup, arbiter_type='Petitioner')
         respondent_data = get_arbiter_data(soup, arbiter_type='Respondent')
+        filings_data = get_filings_data(docket_id, request_headers, request_params)
         summary_data.update(petitioner_data)
         summary_data.update(respondent_data)
+        summary_data.update(filings_data)
         case_data.append(summary_data)
 
     with open(output_file, 'w') as f:
