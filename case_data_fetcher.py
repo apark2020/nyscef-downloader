@@ -77,7 +77,6 @@ def main(docket_ids, output_file):
         summary_data.update(respondent_data)
         case_data.append(summary_data)
 
-    print(case_data)
     with open(output_file, 'w') as f:
         json.dump(case_data, f)
 
