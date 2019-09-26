@@ -95,4 +95,6 @@ if __name__ == '__main__':
         with open(args.docket_ids_file) as f:
             docket_ids = f.readlines()
 
+    docket_ids = list(set(docket_ids))
+    print('Processing case data for {} docket ids'.format(len(docket_ids)))
     sys.exit(main(docket_ids, args.output))
