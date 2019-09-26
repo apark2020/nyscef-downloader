@@ -8,7 +8,7 @@ from bs4 import BeautifulSoup
 
 from utils.courts import COURTS
 
-MAX_REQUEST_PER_SESSION = 70
+MAX_REQUEST_PER_SESSION = 90
 CAPTCHA_ERROR = "The answer that was given did not match the text in the picture. Please try again."
 NYSCEF_BASE_URL = "https://iapps.courts.state.ny.us/nyscef/"
 
@@ -119,16 +119,13 @@ def main(start_date, initial_session_id, case_type, end_date, output_file, selec
                         # to the output_file
                         if case_type in stated_case_type.text:
                             write_data_to_file(link, output_file)
-                            continue
-
-                        write_data_to_file(link, output_file)
 
 
 if __name__ == '__main__':
     cl = argparse.ArgumentParser(description="This script finds docket ids on NYSCEF.")
     cl.add_argument("--start-date", required=True, help="the date you want to start as dd/mm/yyyy")
     cl.add_argument("--session-id", required=True, help="the initial JSESSIONID cookie generated")
-    cl.add_argument("--case-type", help="the case type you are searching for")
+    cl.add_argument("--case-type", required=True, help="the case type you are searching for")
     cl.add_argument("--end-date", default=date.today(), help="the end date for the search")
     cl.add_argument("--output", default="ids.txt", help="file we write the ids to")
     cl.add_argument("--court", help="court where the cases are you want to find")
