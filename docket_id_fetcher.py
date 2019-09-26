@@ -10,6 +10,7 @@ from utils.courts import COURTS
 
 MAX_REQUEST_PER_SESSION = 70
 CAPTCHA_ERROR = "The answer that was given did not match the text in the picture. Please try again."
+NYSCEF_BASE_URL = "https://iapps.courts.state.ny.us/nyscef/"
 
 
 def get_new_session_id():
@@ -60,7 +61,7 @@ def main(start_date, initial_session_id, case_type, end_date, output_file, selec
             print("Starting court: {}".format(court))
             request_data['selCountyCourt'] = court_id
             initial_response = requests.post(
-                'https://iapps.courts.state.ny.us/nyscef/CaseSearch?PageNum=1',
+                NYSCEF_BASE_URL + 'CaseSearch?PageNum=1',
                 headers=request_headers,
                 params=request_params,
                 cookies=request_cookies,
@@ -97,7 +98,7 @@ def main(start_date, initial_session_id, case_type, end_date, output_file, selec
             for i in range(0, pages_num):
                 request_params = (('PageNum', str(i + 1)),)
                 page_response = requests.get(
-                    'https://iapps.courts.state.ny.us/nyscef/CaseSearchResults',
+                    NYSCEF_BASE_URL + 'CaseSearchResults',
                     headers=request_headers,
                     params=request_params,
                     cookies=request_cookies,
