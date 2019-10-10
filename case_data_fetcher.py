@@ -75,9 +75,12 @@ def get_filings_data(docket_id, request_headers, request_params):
         params=request_params
     )
     soup = BeautifulSoup(response.text, 'html.parser')
-    document_data = soup.find(
-        'table'
-    ).find_all('tr')[1:]
+    try:
+        document_data = soup.find(
+            'table'
+        ).find_all('tr')[1:]
+    except AttributeError:
+        return {"documents": documents}
 
     if not document_data:
         return {"documents": documents}
@@ -89,7 +92,7 @@ def get_filings_data(docket_id, request_headers, request_params):
             'filed_date': None,
             'received_date': None,
             'confirmation_link': None,
-            'confirmation_state': None           
+            'confirmation_state': None
         }
         tds = document.find_all('td')
         if not tds or len(tds) < 4:
@@ -115,7 +118,7 @@ def get_filings_data(docket_id, request_headers, request_params):
 
         document_template['confirmation_state'] = tds[3].text.strip().split('\n\n')[0]
         documents.append(document_template)
-    
+
     return {"documents": documents}
 
 
