@@ -10,6 +10,9 @@ BASE_DOCKET_SEARCH_URL = "https://iapps.courts.state.ny.us/nyscef/CaseDetails?do
 
 def get_case_summary_data(soup):
     case_summary = soup.find(class_='CaseSummary')
+    if not case_summary:
+        print('something went wrong')
+        return {}
     case_title = case_summary.find(class_='captionText').text
     court = soup.find(class_='PageHeadingDesc').text
     case_id = soup.find('a', class_='skipTo').text
@@ -41,9 +44,12 @@ def format_names(data):
 
 
 def get_arbiter_data(soup, arbiter_type):
-    arbiter_data = soup.find(
-        'table', attrs={'summary': '{}s in this case'.format(arbiter_type)}
-    ).find_all('tr')[1:]
+    try:
+        arbiter_data = soup.find(
+            'table', attrs={'summary': '{}s in this case'.format(arbiter_type)}
+        ).find_all('tr')[1:]
+    except AttributeError:
+        return {}
     arbiters = []
     for arbiter in arbiter_data:
         arbiter_attr = [p.text.strip() for p in arbiter.find_all('td')]
