@@ -59,11 +59,12 @@ def get_arbiter_data(soup, arbiter_type):
             name = format_names(arbiter_attr[0])
             consented_by = format_names(arbiter_attr[1])
             arbiters.append({
-                'name': name,
+                'names': name,
                 'consented_by': consented_by
             })
 
-    return {arbiter_type.lower(): arbiters}
+    arbiter_plural = arbiter_type.lower() + 's'
+    return {arbiter_plural: arbiters}
 
 
 def get_filings_data(docket_id, request_headers, request_params):
