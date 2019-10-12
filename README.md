@@ -4,6 +4,8 @@ This is a WIP set of scripts for accessing data off the New York Unified Court S
 
 This was originally created to make it easier to aggregate information during the Child Victims Act look-back period for people who do not have a way to login in the NYSCEF or want to play with the data.
 
+The data is currently hosted in a sqlite database with datasette [here](https://child-victims-ny-data.herokuapp.com/child_victims_act_data).
+
 ## Challenges
 
 A huge challenge of getting data from NYSCEF is that in order to aggregate all data on a certain case type over a time period, you must use the "Case Search" option. This allows you to search by `Court` and a specific `Date`. Once you have all the cases that were submitted to that court on that date, you must look through the entire list and only look for things under your subject. If anyone has a better way to search through this, please let me know.
