@@ -80,7 +80,7 @@ def main(start_date, initial_session_id, case_type, end_date, output_file, selec
             soup = BeautifulSoup(initial_response.text, 'html.parser')
             check_for_error(soup)
 
-            # We want to iterate acrosss all pages in our results, so we are grabbing the page
+            # We want to iterate across all pages in our results, so we are grabbing the page
             # count from the first initial result here. If the pages element is not present, i.e.
             # we have an AttributeError, we'll just set to 1.
             try:
