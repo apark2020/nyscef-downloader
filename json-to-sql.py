@@ -27,13 +27,13 @@ for case in data:
 
     for respondent in respondents:
         aribter_type = 'respondent'
-        names = str(respondent['name'])
+        names = str(respondent['names'])
         consented_by = str(respondent['consented_by'])
         c.execute("INSERT INTO arbiters VALUES (?, ?, ?, ?)", (case_id, aribter_type, names, consented_by))
 
     for petitioner in petitioners:
         aribter_type = 'petitioner'
-        names = str(petitioner['name'])
+        names = str(petitioner['names'])
         consented_by = str(petitioner['consented_by'])
         c.execute("INSERT INTO arbiters VALUES (?, ?, ?, ?)", (case_id, aribter_type, names, consented_by))
 
